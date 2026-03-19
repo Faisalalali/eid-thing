@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الوكيل الذكي لمعايدة فيصل</title>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: "Tahoma", "Arial", sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 75vh;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        .chat-header {
+            background-color: #0f172a; 
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .chat-header.overload {
+            background-color: #7f1d1d; 
+        }
+
+        .chat-header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .chat-header p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f8fafc; 
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .wrapper-ai { align-self: flex-start; }
+        .wrapper-user { align-self: flex-end; }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 15px;
+            font-size: 15px;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-ai {
+            background-color: white;
+            color: #333;
+            border-bottom-right-radius: 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .msg-error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-bottom-right-radius: 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border: 1px solid #fca5a5;
+            font-family: monospace;
+        }
+
+        .msg-user {
+            background-color: #3b82f6; 
+            color: white;
+            border-bottom-left-radius: 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .timestamp {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 4px;
+            text-align: left;
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 25px;
+            font-size: 15px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .chat-input-area input:disabled {
+            background-color: #e2e8f0;
+            cursor: not-allowed;
+            color: #64748b;
+        }
+
+        .chat-input-area button {
+            background-color: #0f172a;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            margin-right: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.2s;
+        }
+
+        .chat-input-area button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .chat-input-area button:hover:not(:disabled) {
+            background-color: #1e293b;
+        }
+
+        .typing-indicator {
+            font-size: 12px;
+            color: #64748b;
+            align-self: flex-start;
+            margin-left: 10px;
+            display: none;
+        }
+
+        .system-notice {
+            max-width: 450px;
+            margin-top: 20px;
+            background-color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.6;
+            border: 1px dashed #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header" id="chatHeader">
+            <h1>روبوت فيصل لمعايدات العيد 🤖</h1>
+            <p id="headerStatus">النظام الآلي يعمل حالياً لاستقبال الرسائل.</p>
+        </div>
+
+        <div class="chat-box" id="chatBox">
+            </div>
+
+        <div class="typing-indicator" id="typingIndicator">النظام يكتب الآن...</div>
+
+        <div class="chat-input-area">
+            <input type="text" id="userInput" placeholder="اكتب معايدتك هنا..." onkeypress="handleKeyPress(event)" autofocus>
+            <button id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <div class="system-notice">
+        <strong>تنويه للنظام:</strong> هذه الصفحة تم إنشاؤها لتوفير العناء عليكم. فيصل بخير، لكنه يمارس طقوس العيد (الدوام). من العايدين والفايزين!
+    </div>
+
+    <script>
+        const chatBox = document.getElementById("chatBox");
+        const userInput = document.getElementById("userInput");
+        const sendBtn = document.getElementById("sendBtn");
+        const typingIndicator = document.getElementById("typingIndicator");
+        const headerStatus = document.getElementById("headerStatus");
+        const chatHeader = document.getElementById("chatHeader");
+
+        // Set the launch date to today
+        const eidStartDate = new Date("2026-03-20T00:00:00");
+        const today = new Date();
+        const daysPassed = Math.floor((today - eidStartDate) / (1000 * 60 * 60 * 24));
+
+        let currentPhase = "active"; 
+        if (daysPassed >= 2 && daysPassed <= 8) {
+            currentPhase = "late"; 
+        } else if (daysPassed > 8) {
+            currentPhase = "closed"; 
+        }
+
+        // Hard limit counter
+        let totalMessagesSent = 0;
+
+        function initChat() {
+            let initialMessage = "";
+
+            if (currentPhase === "active") {
+                initialMessage = "أهلاً بك! أنا الوكيل الذكي لـ <strong>فيصل عبدالعزيز سعد العلي</strong>. فيصل يداوم حالياً ومضغوط شوي، بس تفضل اكتب معايدتك وسأقوم بالرد وتوصيلها له مباشرة! ✨";
+            } else if (currentPhase === "late") {
+                initialMessage = "أهلاً بك! العيد في أيامه الأخيرة وفيصل لا يزال في الدوام. النظام مفتوح لاستقبال المعايدات (المتأخرة)، تفضل واكتب رسالتك! ⏳";
+            } else if (currentPhase === "closed") {
+                initialMessage = "أهلاً بك! انتهى موسم المعايدات وتم إغلاق النظام وتحديث السيرفرات. نلقاكم في العيد القادم وكل عام وأنتم بخير! 👋";
+                userInput.disabled = true;
+                sendBtn.disabled = true;
+                userInput.placeholder = "تم إغلاق المحادثة.";
+                headerStatus.innerText = "النظام مغلق حالياً.";
+            }
+
+            addMessage(initialMessage, "msg-ai", "wrapper-ai");
+        }
+
+        const activeResponses = [
+            "هلا بك! وصلت التهنئة وفيصل حالياً مضغوط بالدوام، بس يبلغك سلامه ويقولك كل عام وأنت بخير! 🌹",
+            "الرسالة وصلت للسيستم بنجاح. فيصل يراقب الشاشات الحين بس يقولك من العايدين والفايزين! ✨",
+            "يا هلا! أنا الوكيل الآلي. فيصل مسلّم عليك ويقولك عساكم من عواده، بيقرا رسالتك أول ما يخلص شفت."
+        ];
+
+        const lateResponses = [
+            "أهلاً! العيد خلص تقريباً وفيصل لسه يداوم 😂، بس وصلت رسالتك وكل عام وأنت بخير بأثر رجعي!",
+            "يا هلا! التهنئة متأخرة شوي بس مقبولة! فيصل يسلم عليك ويقولك عساك من عواده. 🌹"
+        ];
+
+        const overloadResponses = [
+            "⚠️ خطأ 429: السعة القصوى للمعايدات اكتملت! سيرفرات Kubernetes تعاني من ضغط هائل.",
+            "🚨 تنبيه النظام: مساحة التخزين في الكلستر ممتلئة. لا يمكن استقبال المزيد من الرسائل!"
+        ];
+
+        function getCurrentTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'م' : 'ص';
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            return hours + ':' + minutes + ' ' + ampm;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter" && !userInput.disabled) {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (text === "") return;
+
+            // Increment the total message count
+            totalMessagesSent++;
+
+            addMessage(text, "msg-user", "wrapper-user");
+            userInput.value = "";
+
+            // Lock the input immediately if they hit the 4th message
+            if (totalMessagesSent >= 4) {
+                userInput.disabled = true;
+                sendBtn.disabled = true;
+                userInput.placeholder = "السيرفر طاح (Server Down)";
+            }
+
+            typingIndicator.style.display = "block";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            setTimeout(() => {
+                typingIndicator.style.display = "none";
+                
+                let randomResponse = "";
+                let msgType = "msg-ai";
+
+                // Trigger logic based on the hard count
+                if (totalMessagesSent >= 3) {
+                    msgType = "msg-error";
+                    chatHeader.classList.add("overload");
+                    
+                    if (totalMessagesSent === 3) {
+                        // The warning
+                        randomResponse = overloadResponses[Math.floor(Math.random() * overloadResponses.length)];
+                        headerStatus.innerText = "🚨 النظام يواجه ضغطاً هائلاً!";
+                    } else if (totalMessagesSent >= 4) {
+                        // The crash
+                        randomResponse = "🛑 Fatal Error: السيرفرات طاحت من كثر الرسايل. فيصل بيضطر يترك شغله الحين عشان يسوي ريستارت للنظام بسببك! المحادثة أغلقت.";
+                        headerStatus.innerText = "❌ النظام معطل بالكامل";
+                    }
+                } else {
+                    // Normal behavior for the first two messages
+                    if (currentPhase === "active") {
+                        randomResponse = activeResponses[Math.floor(Math.random() * activeResponses.length)];
+                    } else if (currentPhase === "late") {
+                        randomResponse = lateResponses[Math.floor(Math.random() * lateResponses.length)];
+                    }
+                }
+
+                addMessage(randomResponse, msgType, "wrapper-ai");
+            }, Math.random() * 2000 + 1500); 
+        }
+
+        function addMessage(text, msgClass, wrapperClass) {
+            const wrapperDiv = document.createElement("div");
+            wrapperDiv.className = `message-wrapper ${wrapperClass}`;
+
+            const msgDiv = document.createElement("div");
+            msgDiv.className = `message ${msgClass}`;
+            msgDiv.innerHTML = text;
+
+            const timeDiv = document.createElement("div");
+            timeDiv.className = "timestamp";
+            timeDiv.innerText = getCurrentTime();
+
+            wrapperDiv.appendChild(msgDiv);
+            wrapperDiv.appendChild(timeDiv);
+
+            chatBox.appendChild(wrapperDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        window.onload = initChat;
+    </script>
+</body>
+</html>
