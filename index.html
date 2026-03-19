@@ -22,12 +22,11 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            /* Using dvh (dynamic viewport height) ensures the body shrinks when the keyboard appears */
             height: 100dvh; 
             margin: 0;
             padding: 15px;
             box-sizing: border-box;
-            overflow: hidden; /* Prevents the whole page from scrolling */
+            overflow: hidden; 
         }
 
         .chat-container {
@@ -38,7 +37,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            /* Fills available space while leaving room for the notice */
             height: 100%;
             max-height: 85dvh; 
             overflow: hidden;
@@ -83,7 +81,7 @@
         .message-wrapper {
             display: flex;
             flex-direction: column;
-            max-width: 80%;
+            max-width: 85%;
             animation: fadeIn 0.3s ease-in-out;
         }
 
@@ -117,7 +115,7 @@
             border-bottom-right-radius: 0;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
             border: 1px solid #fca5a5;
-            font-family: monospace;
+            font-weight: bold;
         }
 
         .msg-user {
@@ -132,6 +130,27 @@
             color: #94a3b8;
             margin-top: 4px;
             text-align: left;
+        }
+
+        /* The visually offensive fake Captcha */
+        .captcha-box {
+            background: repeating-linear-gradient(45deg, #d1d5db, #d1d5db 5px, #f3f4f6 5px, #f3f4f6 10px);
+            padding: 15px;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 28px;
+            font-family: "Courier New", Courier, monospace;
+            font-weight: bold;
+            color: #1f2937;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+            user-select: none; /* Prevents copy-pasting */
+            border: 2px solid #9ca3af;
+            border-radius: 8px;
+            transform: skew(-5deg) rotate(2deg);
+            filter: blur(0.8px);
+            letter-spacing: 4px;
+            overflow: hidden;
+            word-wrap: break-word;
         }
 
         .chat-input-area {
@@ -210,8 +229,8 @@
 
     <div class="chat-container">
         <div class="chat-header" id="chatHeader">
-            <h1>روبوت فيصل لمعايدات العيد 🤖</h1>
-            <p id="headerStatus">النظام الآلي يعمل حالياً لاستقبال الرسائل.</p>
+            <h1>روبوت استلام العيدية 🤖</h1>
+            <p id="headerStatus">بوابة STC Pay الآلية الآمنة</p>
         </div>
 
         <div class="chat-box" id="chatBox">
@@ -220,7 +239,7 @@
         <div class="typing-indicator" id="typingIndicator">النظام يكتب الآن...</div>
 
         <div class="chat-input-area">
-            <input type="text" id="userInput" placeholder="اكتب معايدتك هنا..." onkeypress="handleKeyPress(event)" autofocus>
+            <input type="text" id="userInput" placeholder="اكتب هنا..." onkeypress="handleKeyPress(event)" autofocus>
             <button id="sendBtn" onclick="sendMessage()">➤</button>
         </div>
     </div>
@@ -237,53 +256,23 @@
         const headerStatus = document.getElementById("headerStatus");
         const chatHeader = document.getElementById("chatHeader");
 
-        // Set the launch date to today
-        const eidStartDate = new Date("2026-03-20T00:00:00");
-        const today = new Date();
-        const daysPassed = Math.floor((today - eidStartDate) / (1000 * 60 * 60 * 24));
-
-        let currentPhase = "active"; 
-        if (daysPassed >= 2 && daysPassed <= 8) {
-            currentPhase = "late"; 
-        } else if (daysPassed > 8) {
-            currentPhase = "closed"; 
-        }
-
-        let totalMessagesSent = 0;
+        // Chat flow state machine
+        let step = 0; 
+        // 0 = Awaiting phone number
+        // 1 = Awaiting Captcha 1
+        // 2 = Awaiting Captcha 2
 
         function initChat() {
-            let initialMessage = "";
-
-            if (currentPhase === "active") {
-                initialMessage = "أهلاً بك! أنا الوكيل الذكي لـ <strong>فيصل عبدالعزيز سعد العلي</strong>. فيصل يداوم حالياً ومضغوط شوي، بس تفضل اكتب معايدتك وسأقوم بالرد وتوصيلها له مباشرة! ✨";
-            } else if (currentPhase === "late") {
-                initialMessage = "أهلاً بك! العيد في أيامه الأخيرة وفيصل لا يزال في الدوام. النظام مفتوح لاستقبال المعايدات (المتأخرة)، تفضل واكتب رسالتك! ⏳";
-            } else if (currentPhase === "closed") {
-                initialMessage = "أهلاً بك! انتهى موسم المعايدات وتم إغلاق النظام وتحديث السيرفرات. نلقاكم في العيد القادم وكل عام وأنتم بخير! 👋";
-                userInput.disabled = true;
-                sendBtn.disabled = true;
-                userInput.placeholder = "تم إغلاق المحادثة.";
-                headerStatus.innerText = "النظام مغلق حالياً.";
-            }
-
-            addMessage(initialMessage, "msg-ai", "wrapper-ai");
+            // First message: Formal greeting
+            addMessage("كل عام وانتم بخير، تقبل الله صيامكم وطاعاتكم 🌹", "msg-ai", "wrapper-ai");
+            
+            // Second message: The bait (1.5 seconds later)
+            typingIndicator.style.display = "block";
+            setTimeout(() => {
+                typingIndicator.style.display = "none";
+                addMessage("لاستلام عيدية فيصل عبر STC Pay، يرجى إدخال رقم جوالك المسجل بالخدمة 💸👇", "msg-ai", "wrapper-ai");
+            }, 1500);
         }
-
-        const activeResponses = [
-            "هلا بك! وصلت التهنئة وفيصل حالياً مضغوط بالدوام، بس يبلغك سلامه ويقولك كل عام وأنت بخير! 🌹",
-            "الرسالة وصلت للسيستم بنجاح. فيصل يراقب الشاشات الحين بس يقولك من العايدين والفايزين! ✨",
-            "يا هلا! أنا الوكيل الآلي. فيصل مسلّم عليك ويقولك عساكم من عواده، بيقرا رسالتك أول ما يخلص شفت."
-        ];
-
-        const lateResponses = [
-            "أهلاً! العيد خلص تقريباً وفيصل لسه يداوم 😂، بس وصلت رسالتك وكل عام وأنت بخير بأثر رجعي!",
-            "يا هلا! التهنئة متأخرة شوي بس مقبولة! فيصل يسلم عليك ويقولك عساك من عواده. 🌹"
-        ];
-
-        const overloadResponses = [
-            "⚠️ خطأ 429: السعة القصوى للمعايدات اكتملت! سيرفرات Kubernetes تعاني من ضغط هائل.",
-            "🚨 تنبيه النظام: مساحة التخزين في الكلستر ممتلئة. لا يمكن استقبال المزيد من الرسائل!"
-        ];
 
         function getCurrentTime() {
             const now = new Date();
@@ -296,14 +285,12 @@
             return hours + ':' + minutes + ' ' + ampm;
         }
 
-        // Scroll helper function for mobile keyboards
         function scrollToBottom() {
             setTimeout(() => {
                 chatBox.scrollTop = chatBox.scrollHeight;
             }, 100);
         }
 
-        // Keep input focused after clicking send (helps on some mobile browsers)
         userInput.addEventListener("focus", scrollToBottom);
 
         function handleKeyPress(event) {
@@ -316,17 +303,9 @@
             const text = userInput.value.trim();
             if (text === "") return;
 
-            totalMessagesSent++;
-
             addMessage(text, "msg-user", "wrapper-user");
             userInput.value = "";
-            userInput.focus(); // Try to keep keyboard open on mobile
-
-            if (totalMessagesSent >= 4) {
-                userInput.disabled = true;
-                sendBtn.disabled = true;
-                userInput.placeholder = "السيرفر طاح (Server Down)";
-            }
+            userInput.focus();
 
             typingIndicator.style.display = "block";
             scrollToBottom();
@@ -334,30 +313,37 @@
             setTimeout(() => {
                 typingIndicator.style.display = "none";
                 
-                let randomResponse = "";
-                let msgType = "msg-ai";
-
-                if (totalMessagesSent >= 3) {
-                    msgType = "msg-error";
-                    chatHeader.classList.add("overload");
+                if (step === 0) {
+                    // They entered a phone number -> Hit them with Captcha 1
+                    addMessage("جاري المعالجة... يرجى التحقق من أنك إنسان لحماية الخوادم. اكتب الرمز الموجود في الصورة بدقة:", "msg-ai", "wrapper-ai");
+                    // Impossible Captcha 1 (Zalgo text + Greek letters + symbols)
+                    addMessage("<div class='captcha-box'>W̸̡̨̛8𒈙Δp꧅</div>", "msg-ai", "wrapper-ai");
+                    step++;
+                } 
+                else if (step === 1) {
+                    // They tried Captcha 1 -> Fail them, give Captcha 2
+                    addMessage("❌ الرمز غير صحيح! هذه محاولتك الأخيرة قبل حظر الحساب. ادخل الرمز التالي بعناية فائقة:", "msg-error", "wrapper-ai");
+                    // Impossible Captcha 2 (Upside down, overlapping, zero logic)
+                    addMessage("<div class='captcha-box' style='letter-spacing: -3px; transform: skew(10deg) rotate(-3deg);'>§⌘﷼﷽Ω∰!</div>", "msg-ai", "wrapper-ai");
+                    step++;
+                } 
+                else if (step === 2) {
+                    // They tried Captcha 2 -> Crash the system
+                    addMessage("🛑 Fatal Error: فشل التحقق المتكرر! تم رصد هجوم (DDoS Attack) من جهازك.", "msg-error", "wrapper-ai");
+                    addMessage("السيرفرات طاحت. الكلستر انضرب. فيصل بيضطر يترك شغله الحين عشان يسوي ريستارت للنظام بسببك! المحادثة أغلقت نهائياً.", "msg-error", "wrapper-ai");
                     
-                    if (totalMessagesSent === 3) {
-                        randomResponse = overloadResponses[Math.floor(Math.random() * overloadResponses.length)];
-                        headerStatus.innerText = "🚨 النظام يواجه ضغطاً هائلاً!";
-                    } else if (totalMessagesSent >= 4) {
-                        randomResponse = "🛑 Fatal Error: السيرفرات طاحت من كثر الرسايل. فيصل بيضطر يترك شغله الحين عشان يسوي ريستارت للنظام بسببك! المحادثة أغلقت.";
-                        headerStatus.innerText = "❌ النظام معطل بالكامل";
-                    }
-                } else {
-                    if (currentPhase === "active") {
-                        randomResponse = activeResponses[Math.floor(Math.random() * activeResponses.length)];
-                    } else if (currentPhase === "late") {
-                        randomResponse = lateResponses[Math.floor(Math.random() * lateResponses.length)];
-                    }
+                    // Lock down the UI
+                    userInput.disabled = true;
+                    sendBtn.disabled = true;
+                    userInput.placeholder = "السيرفر طاح (Server Down)";
+                    chatHeader.classList.add("overload");
+                    headerStatus.innerText = "❌ النظام معطل بالكامل";
+                    
+                    // Prevent further steps just in case
+                    step++;
                 }
 
-                addMessage(randomResponse, msgType, "wrapper-ai");
-            }, Math.random() * 2000 + 1500); 
+            }, Math.random() * 1000 + 1000); // 1-2 second delay for realism
         }
 
         function addMessage(text, msgClass, wrapperClass) {
